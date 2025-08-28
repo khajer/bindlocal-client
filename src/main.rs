@@ -4,7 +4,7 @@ use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let url = "ws://127.0.0.1:8080";
+    let url = "ws://127.0.0.1:3000/ws";
     println!("Connecting to: {}", url);
     let (ws_stream, _) = connect_async(url).await?;
     println!("Connected to WebSocket server");
@@ -49,6 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if !line.is_empty() {
             if let Err(e) = ws_sender.send(Message::Text(line.to_string())).await {
                 eprintln!("Error sending message: {}", e);
+
                 break;
             }
         }
