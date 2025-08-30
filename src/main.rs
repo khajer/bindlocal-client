@@ -1,66 +1,24 @@
-use futures::{SinkExt, StreamExt};
-use tokio::io::{self, AsyncBufReadExt};
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let url = "ws://127.0.0.1:3000/ws";
-    println!("Connecting to: {}", url);
-    let (ws_stream, _) = connect_async(url).await?;
-    println!("Connected to WebSocket server");
+async fn main() -> io::Result<()> {
+    // Connect to server
+    let mut stream = TcpStream::connect("127.0.0.1:9090").await?;
+    println!("Connected to server!");
 
-    let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+    // Send message
+    stream.write_all(b"Hello from client!\n").await?;
 
-    let read_task = tokio::spawn(async move {
-        while let Some(msg) = ws_receiver.next().await {
-            match msg {
-                Ok(message) => match message {
-                    Message::Text(text) => {
-                        println!("Received: {}", text);
-                    }
-                    Message::Binary(data) => {
-                        println!("Received {} bytes of binary data", data.len());
-                    }
-                    Message::Close(_) => {
-                        println!("Server closed connection");
-                        break;
-                    }
-                    _ => {}
-                },
-                Err(e) => {
-                    eprintln!("Error receiving message: {}", e);
-                    break;
-                }
-            }
-        }
-    });
-
-    // Handle user input
-    let mut stdin = io::BufReader::new(io::stdin()).lines();
-
-    println!("Type messages to send (or 'quit' to exit):");
-    while let Some(line) = stdin.next_line().await? {
-        let line = line.trim();
-
-        if line == "quit" {
+    let mut buffer = [0; 1024];
+    loop {
+        let n = stream.read(&mut buffer).await?;
+        if n == 0 {
+            println!("Server closed connection.");
             break;
         }
-
-        if !line.is_empty() {
-            if let Err(e) = ws_sender.send(Message::Text(line.to_string())).await {
-                eprintln!("Error sending message: {}", e);
-
-                break;
-            }
-        }
+        println!("Received: {}", String::from_utf8_lossy(&buffer[..n]));
     }
 
-    // Close the connection
-    let _ = ws_sender.send(Message::Close(None)).await;
-
-    // Wait for the read task to finish
-    let _ = read_task.await;
-
-    println!("Connection closed");
     Ok(())
 }
