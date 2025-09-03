@@ -1,3 +1,4 @@
+use rand::Rng;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
@@ -8,7 +9,9 @@ async fn main() -> io::Result<()> {
     println!("Connected to server!");
 
     // Send message
-    stream.write_all(b"Hello from client!\n").await?;
+    // stream.write_all(b"Hello from client!\n").await?;
+    //
+    // stream.write_all(b"echo Test!\n").await?;
 
     let mut buffer = [0; 1024];
     loop {
@@ -17,7 +20,19 @@ async fn main() -> io::Result<()> {
             println!("Server closed connection.");
             break;
         }
-        println!("Received: {}", String::from_utf8_lossy(&buffer[..n]));
+
+        let rec_msg = String::from_utf8_lossy(&buffer[..n]);
+        println!("Received: {}", rec_msg);
+
+        if rec_msg == "PING" {
+            let mut rng = rand::thread_rng();
+            let random_int: u32 = rng.gen_range(0..100);
+
+            let msg = format!("value = {}", random_int);
+            println!("Sent: {}", msg);
+            stream.write_all(msg.as_bytes()).await?;
+            // stream.write_all(b"PONG\n").await?;
+        }
     }
 
     Ok(())
