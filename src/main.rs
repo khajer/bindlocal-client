@@ -28,7 +28,7 @@ async fn main() -> io::Result<()> {
             let mut rng = rand::thread_rng();
             let random_int: u32 = rng.gen_range(0..100);
 
-            let msg = format!("value = {}", random_int);
+            let msg = format!("{}", random_int);
             println!("Sent: {}", msg);
             stream.write_all(msg.as_bytes()).await?;
             // stream.write_all(b"PONG\n").await?;
