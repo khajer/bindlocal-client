@@ -31,7 +31,6 @@ async fn main() -> io::Result<()> {
             let msg = format!("{}", random_int);
             println!("Sent: {}", msg);
             stream.write_all(msg.as_bytes()).await?;
-            // stream.write_all(b"PONG\n").await?;
         }
     }
 
