@@ -7,7 +7,7 @@ async fn main() -> io::Result<()> {
     // Connect to server
     let mut stream = TcpStream::connect("127.0.0.1:9090").await?;
     println!("Connected to server!");
-
+    let mut first_message = true;
     // Send message
     // stream.write_all(b"Hello from client!\n").await?;
     //
@@ -23,15 +23,17 @@ async fn main() -> io::Result<()> {
 
         let rec_msg = String::from_utf8_lossy(&buffer[..n]);
         println!("Received: {}", rec_msg);
-
-        if rec_msg == "PING" {
-            let mut rng = rand::thread_rng();
-            let random_int: u32 = rng.gen_range(0..100);
-
-            let msg = format!("{}", random_int);
-            println!("Sent: {}", msg);
-            stream.write_all(msg.as_bytes()).await?;
+        if first_message {
+            first_message = !first_message;
+            println!("first_message: {}", rec_msg);
+            continue;
         }
+        let mut rng = rand::thread_rng();
+        let random_int: u32 = rng.gen_range(0..100);
+
+        let msg = format!("{}", random_int);
+        println!("Sent: {}", msg);
+        stream.write_all(msg.as_bytes()).await?;
     }
 
     Ok(())
