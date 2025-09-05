@@ -9,7 +9,7 @@ async fn main() -> io::Result<()> {
     let mut first_message = true;
 
     // Send message
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 4096];
     loop {
         let n = stream.read(&mut buffer).await?;
         if n == 0 {
@@ -25,21 +25,20 @@ async fn main() -> io::Result<()> {
             continue;
         }
 
-        println!("Received: {}", rec_msg.to_string());
-
         let raw_request = rec_msg.to_string();
         let mut stream_client = TcpStream::connect("localhost:3000").await?;
 
-        // Send request
+        // send request client
         stream_client.write_all(raw_request.as_bytes()).await?;
         stream_client.flush().await?;
 
-        // Read response
-        let mut buffer = vec![0; 4096];
-        let nn = stream_client.read(&mut buffer).await?;
-        let rec_client_msg = String::from_utf8_lossy(&buffer[..nn]);
-        println!("Received message from localhost: {}", rec_client_msg);
-        stream.write_all(rec_client_msg.as_bytes()).await?;
+        // Read response client
+        let mut full_buffer = Vec::new();
+        stream_client.read_to_end(&mut full_buffer).await?;
+
+        // send to server
+        stream.write_all(&full_buffer).await?;
+        stream.flush().await?;
     }
 
     Ok(())
