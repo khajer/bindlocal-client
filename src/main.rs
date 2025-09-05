@@ -21,7 +21,7 @@ async fn main() -> io::Result<()> {
 
         if first_message {
             first_message = !first_message;
-            println!("msg: \n{}", rec_msg);
+            println!("{}", rec_msg);
             continue;
         }
 
