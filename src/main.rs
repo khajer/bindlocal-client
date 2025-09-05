@@ -36,9 +36,12 @@ async fn main() -> io::Result<()> {
         let mut full_buffer = Vec::new();
         stream_client.read_to_end(&mut full_buffer).await?;
 
-        // send to server
-        stream.write_all(&full_buffer).await?;
-        stream.flush().await?;
+        if let Err(e) = stream.write(&full_buffer).await {
+            eprintln!("Error sending direct message to server: {}", e);
+        }
+        if let Err(e) = stream.flush().await {
+            eprintln!("Error flushing TCP stream: {}", e);
+        }
     }
 
     Ok(())
