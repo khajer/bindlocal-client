@@ -26,10 +26,10 @@ async fn main() -> io::Result<()> {
 
         let raw_request = rec_msg.to_string();
 
-        match TcpStream::connect("localhost:3000").await {
+        match TcpStream::connect("localhost:5173").await {
             Ok(stream_local) => {
                 let mut stream_client = stream_local;
-                println!("Successfully connected to localhost:3000");
+                println!("successfully connected to localhost:5173");
 
                 stream_client.write(raw_request.as_bytes()).await?;
 
