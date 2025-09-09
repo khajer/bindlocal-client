@@ -39,15 +39,11 @@ async fn main() -> io::Result<()> {
         let mut full_buffer = vec![0u8; 4096]; // Initial capacity
         let mut total_data = Vec::new();
         loop {
-            println!("start");
             let n = stream_client.read(&mut full_buffer).await?;
-            println!("read");
             if n == 0 {
                 break; // EOF
             }
-            println!("loop");
             total_data.extend_from_slice(&full_buffer[..n]);
-            println!("extend");
 
             if total_data.windows(4).any(|w| w == b"\r\n\r\n") {
                 println!("Complete HTTP headers received");
