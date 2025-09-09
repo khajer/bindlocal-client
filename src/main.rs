@@ -5,7 +5,7 @@ use tokio::net::TcpStream;
 async fn main() -> io::Result<()> {
     // Connect to server
     let mut stream = TcpStream::connect("127.0.0.1:9090").await?;
-    println!("Connected to server!");
+    // println!("Connected to server!");
     let mut first_message = true;
 
     // Send message
