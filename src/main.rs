@@ -3,7 +3,7 @@ use tokio::net::TcpStream;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    // let raw_request = "GET / HTTP/1.1\r\n
+    // let raw_request = b"GET / HTTP/1.1\r\n
     // Host: 0001.localhost:8080\r\n
     // User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0\r\n
     // Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n
@@ -55,18 +55,23 @@ async fn main() -> io::Result<()> {
                 // Buffer to store the response
                 let mut response_data: Vec<u8> = Vec::new();
                 // Read the response into the vector
-                if let Err(e) = stream_local.read_buf(&mut response_data).await {
+                if let Err(e) = stream_local.read_to_end(&mut response_data).await {
                     eprintln!("Error flushing TCP stream: {}", e);
                 }
                 // stream_local.read_to_end(&mut response_data).await?;
                 println!("Response received, length: {} bytes", response_data.len());
+                println!("Response received, length: {} bytes", response_data.len());
 
+                println!("{:?}", response_data);
                 if let Err(e) = stream.write_all(&response_data).await {
                     println!("Send to server fails {:?}", e);
                 }
                 if let Err(e) = stream.flush().await {
                     eprintln!("Error flushing TCP stream: {}", e);
                 }
+                println!("Completed");
+                let rec = String::from_utf8(response_data).unwrap();
+                println!("Received data: {}", rec);
             }
             Err(e) => {
                 eprintln!("Failed to connect: {}", e);
@@ -108,11 +113,13 @@ async fn call_local(raw_request: &[u8]) {
             // Buffer to store the response
             let mut response_data: Vec<u8> = Vec::new();
             // Read the response into the vector
-            if let Err(e) = stream_local.read_buf(&mut response_data).await {
+            if let Err(e) = stream_local.read_to_end(&mut response_data).await {
                 eprintln!("Error flushing TCP stream: {}", e);
             }
             // stream_local.read_to_end(&mut response_data).await?;
             println!("Response received, length: {} bytes", response_data.len());
+            let rec = String::from_utf8(response_data).unwrap();
+            println!("Received data: {}", rec);
         }
         _ => {}
     }
