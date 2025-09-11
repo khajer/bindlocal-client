@@ -64,6 +64,9 @@ async fn main() -> io::Result<()> {
                 if let Err(e) = stream.write_all(&response_data).await {
                     println!("Send to server fails {:?}", e);
                 }
+                if let Err(e) = stream.flush().await {
+                    eprintln!("Error flushing TCP stream: {}", e);
+                }
             }
             Err(e) => {
                 eprintln!("Failed to connect: {}", e);
