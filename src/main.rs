@@ -5,9 +5,7 @@ use tokio::net::TcpStream;
 async fn main() -> io::Result<()> {
     // Connect to server
     let mut stream = TcpStream::connect("127.0.0.1:9090").await?;
-
     let mut first_message = true;
-    // Send message
     let mut buffer = [0; 4096];
     loop {
         let n = stream.read(&mut buffer).await?;
@@ -36,17 +34,15 @@ async fn main() -> io::Result<()> {
                     eprintln!("Error flushing TCP stream: {}", e);
                 }
 
-                // Buffer to store the response
                 let mut response_data: Vec<u8> = Vec::new();
-                // Read the response into the vector
                 if let Err(e) = stream_local.read_to_end(&mut response_data).await {
                     eprintln!("Error flushing TCP stream: {}", e);
                 }
-                // stream_local.read_to_end(&mut response_data).await?;
-                println!("Response received, length: {} bytes", response_data.len());
-                println!("Response received, length: {} bytes", response_data.len());
 
-                println!("{:?}", response_data);
+                println!("Response received, length: {} bytes", response_data.len());
+                let rec = String::from_utf8(response_data.clone()).unwrap();
+                println!("Received data: {}", rec);
+
                 if let Err(e) = stream.write_all(&response_data).await {
                     println!("Send to server fails {:?}", e);
                 }
@@ -54,9 +50,6 @@ async fn main() -> io::Result<()> {
                     eprintln!("Error flushing TCP stream: {}", e);
                 }
                 println!(">>> Send Completely");
-                println!("Response received, length: {} bytes", response_data.len());
-                let rec = String::from_utf8(response_data).unwrap();
-                println!("Received data: {}", rec);
             }
             Err(e) => {
                 eprintln!("Failed to connect: {}", e);
