@@ -37,8 +37,8 @@ async fn main() -> io::Result<()> {
             println!("{}", rec_msg);
             continue;
         }
-
-        // let raw_request = rec_msg.to_string();
+        let rec_msg = String::from_utf8_lossy(&buffer[..n]).to_string();
+        println!("request : \n{rec_msg}");
         // call_local(&buffer).await;
 
         match TcpStream::connect("localhost:3000").await {
@@ -69,7 +69,8 @@ async fn main() -> io::Result<()> {
                 if let Err(e) = stream.flush().await {
                     eprintln!("Error flushing TCP stream: {}", e);
                 }
-                println!("Completed");
+                println!(">>> Send Completely");
+                println!("Response received, length: {} bytes", response_data.len());
                 let rec = String::from_utf8(response_data).unwrap();
                 println!("Received data: {}", rec);
             }
