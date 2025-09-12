@@ -36,7 +36,6 @@ async fn main() -> io::Result<()> {
         println!("request : \n{rec_msg}");
 
         let host = format!("localhost:{local_port}");
-
         match TcpStream::connect(host.as_str()).await {
             Ok(mut stream_local) => {
                 println!("successfully connected to {host}");
