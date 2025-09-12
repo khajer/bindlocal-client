@@ -1,8 +1,20 @@
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+use std::env;
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() < 1 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "missing parameter",
+        ));
+    }
+    let local_port = args[1].as_str();
+
     // Connect to server
     let mut stream = TcpStream::connect("127.0.0.1:9090").await?;
     let mut first_message = true;
@@ -23,9 +35,10 @@ async fn main() -> io::Result<()> {
         let rec_msg = String::from_utf8_lossy(&buffer[..n]).to_string();
         println!("request : \n{rec_msg}");
 
-        match TcpStream::connect("localhost:3000").await {
+        let host = format!("localhost:{local_port}");
+        match TcpStream::connect(host.as_str()).await {
             Ok(mut stream_local) => {
-                println!("successfully connected to localhost:3000");
+                println!("successfully connected to {host}");
 
                 if let Err(e) = stream_local.write_all(&buffer).await {
                     eprintln!("Error sending direct message to TCP client: {}", e);
