@@ -1,4 +1,4 @@
-use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
+use tokio::io::{self, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::time::Instant;
 
@@ -127,6 +127,23 @@ async fn call_local() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
 
+    let request_brownser = b"GET / HTTP/1.1\r\n\
+Host: localhost:5173\r\n\
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0\r\n\
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n\
+Accept-Language: en-US,en;q=0.5\r\n\
+Accept-Encoding: gzip, deflate, br, zstd\r\n\
+Connection: keep-alive\r\n\
+Upgrade-Insecure-Requests: 1\r\n\
+Sec-Fetch-Dest: document\r\n\
+Sec-Fetch-Mode: navigate\r\n\
+Sec-Fetch-Site: none\r\n\
+Sec-Fetch-User: ?1\r\n\
+If-None-Match: \"1ofdq7s\"\r\n\
+\r\n\
+\r\n\
+";
+
     let buffer_request1 = b"GET / HTTP/1.1\r\n\
 Host: 0001.localhost:8080\r\n\
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0\r\n\
@@ -169,26 +186,80 @@ Connection: keep-alive\r\n\
             // println!("successfully connected to {request}");
             //
             let time = Instant::now();
-            if let Err(e) = stream_local.write_all(buffer_request4).await {
+            if let Err(e) = stream_local.write_all(request_brownser).await {
                 eprintln!("Error sending direct message to TCP client: {}", e);
             }
             if let Err(e) = stream_local.flush().await {
                 eprintln!("Error flushing TCP stream: {}", e);
             }
 
-            let mut response_data: Vec<u8> = Vec::new();
-            if let Err(e) = stream_local.read_to_end(&mut response_data).await {
-                eprintln!("Error flushing TCP stream: {}", e);
+            let mut reader = BufReader::new(&mut stream_local);
+            let mut headers = String::new();
+            loop {
+                let mut line = String::new();
+                // reader.read_line(&mut line).await;
+                reader.read_line(&mut line).await.unwrap();
+                if line == "\r\n" {
+                    break; // end of headers
+                }
+                headers.push_str(&line);
             }
+            println!("Headers:\n{}", headers);
+
+            let content_length = headers
+                .lines()
+                .find(|l| l.to_lowercase().starts_with("content-length"))
+                .and_then(|l| l.split(':').nth(1))
+                .map(|s| s.trim().parse::<usize>().ok())
+                .flatten();
+
+            let mut body = Vec::new();
+            if let Some(len) = content_length {
+                println!("content_length");
+                let mut buf = vec![0u8; len];
+                reader.read_exact(&mut buf).await.unwrap();
+                body.extend_from_slice(&buf);
+            } else if headers.contains("transfer-encoding: chunked") {
+                println!("transfer-encoding: chunked");
+            } else {
+                println!("read_to_end");
+                let mut buf = vec![0u8; 1024];
+                // let mut total_data = Vec::new();
+                loop {
+                    let n = reader.read(&mut buf).await.unwrap();
+                    if n == 0 {
+                        break; // EOF
+                    }
+                    body.extend_from_slice(&buf[..n]);
+                    if body.windows(4).any(|w| w == b"\r\n\r\n") {
+                        println!("Complete HTTP headers received");
+                        break;
+                    }
+                }
+                // reader.read_to_end(&mut body).await.unwrap();
+            }
+            println!("Body length: {}", body.len());
 
             println!(
                 "Response received, length: {} bytes, elapsed time : {:?}",
-                response_data.len(),
+                body.len(),
                 time.elapsed()
             );
 
+            // let mut response_data: Vec<u8> = Vec::new();
+            // if let Err(e) = stream_local.read_to_end(&mut response_data).await {
+            //     eprintln!("Error flushing TCP stream: {}", e);
+            // }
+
+            // println!(
+            //     "Response received, length: {} bytes, elapsed time : {:?}",
+            //     response_data.len(),
+            //     time.elapsed()
+            // );
+
             // let rec = String::from_utf8(response_data.clone()).unwrap();
             // println!("Received data: {}", rec);
+            // println!("Received data: {:?}", response_data);
         }
         Err(e) => {
             eprintln!("Failed to connect: {}", e);
