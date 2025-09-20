@@ -19,7 +19,7 @@ async fn main() -> io::Result<()> {
              Connection: keep-alive\r\n\
              User-Agent: RustTcpClient/1.0\r\n\
              Accept: */*\r\n\r\n",
-            "/", "localhost:5173"
+            "/", "localhost:3000"
         );
         // call_2(request.clone()).await.unwrap();
         call_3(request).await.unwrap();
@@ -62,7 +62,7 @@ async fn main() -> io::Result<()> {
 
         let request_buff = trim_null_bytes(&buffer);
 
-        let response_data = capture_http_raw1(&request_buff, "localhost:5173")
+        let response_data = capture_http_raw1(&request_buff, "localhost:3000")
             .await
             .unwrap();
 
@@ -114,7 +114,7 @@ async fn main() -> io::Result<()> {
 }
 
 async fn call_local() {
-    let host = "localhost:5173";
+    let host = "localhost:3000";
 
     // let buffer_request = [
     //     71, 69, 84, 32, 47, 32, 72, 84, 84, 80, 47, 49, 46, 49, 13, 10, 72, 111, 115, 116, 58, 32,
