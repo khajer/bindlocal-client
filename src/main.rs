@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::str;
-use tokio::io::{self, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::Instant;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let call_local_only = true;
+    let call_local_only = false;
     if call_local_only {
         // // --- Send request ---
         let request = format!(
@@ -138,10 +138,6 @@ async fn capture_http_raw(request: String, host: &str) -> Result<Vec<u8>, Box<dy
                     headers.insert(k.to_string(), v.to_string());
                 }
             }
-            println!(">>>> begin header buffer");
-            let txt = String::from_utf8_lossy(&buffer[..header_end]);
-            println!("{txt}");
-            println!(">>>> end header buffer ");
 
             // --- Read the body depending on headers ---
             if let Some(len) = headers.get("Content-Length") {
@@ -159,45 +155,29 @@ async fn capture_http_raw(request: String, host: &str) -> Result<Vec<u8>, Box<dy
                 .map(|v| v.to_ascii_lowercase())
                 == Some("chunked".into())
             {
-                println!(">> Transfer-Encoding: chunked");
-                let mut rest = buffer[header_end..].to_vec();
+                println!("** Transfer-Encoding: chunked");
                 loop {
-                    // Ensure we have a full line
-                    while !rest.windows(2).any(|w| w == b"\r\n") {
-                        let n = stream.read(&mut tmp).await?;
-                        if n == 0 {
-                            return Err("connection closed during chunk size".into());
-                        }
-                        rest.extend_from_slice(&tmp[..n]);
-                    }
-
-                    // Get chunk size
-                    let pos = rest.windows(2).position(|w| w == b"\r\n").unwrap();
-                    let line = String::from_utf8_lossy(&rest[..pos]);
-                    let size = usize::from_str_radix(line.trim(), 16)?;
-                    let chunk_header_len = pos + 2;
-
-                    // Copy chunk header into buffer
-                    buffer.extend_from_slice(&rest[..chunk_header_len]);
-                    rest.drain(..chunk_header_len);
-
-                    if size == 0 {
-                        buffer.extend_from_slice(b"\r\n"); // final CRLF
+                    if buffer[header_end..].windows(5).any(|w| w == b"0\r\n\r\n") {
+                        println!("Found chunked terminator!");
                         break;
                     }
 
-                    // Ensure we have full chunk
-                    while rest.len() < size + 2 {
-                        let n = stream.read(&mut tmp).await?;
-                        if n == 0 {
-                            return Err("connection closed during chunk body".into());
-                        }
-                        rest.extend_from_slice(&tmp[..n]);
+                    // Read more data
+                    let n = stream.read(&mut tmp).await?;
+                    if n == 0 {
+                        return Err("connection closed before chunked terminator".into());
                     }
+                    buffer.extend_from_slice(&tmp[..n]);
+                }
 
-                    // Copy chunk data + CRLF into buffer
-                    buffer.extend_from_slice(&rest[..size + 2]);
-                    rest.drain(..size + 2);
+                // Optional: Find exact end position for cleaner termination
+                if let Some(terminator_pos) = buffer[header_end..]
+                    .windows(5)
+                    .position(|w| w == b"0\r\n\r\n")
+                {
+                    let end_pos = header_end + terminator_pos + 5; // Include the terminator
+                    buffer.truncate(end_pos);
+                    println!("Truncated to exact terminator position: {}", end_pos);
                 }
             } else {
                 println!("connection close");
@@ -218,105 +198,6 @@ async fn capture_http_raw(request: String, host: &str) -> Result<Vec<u8>, Box<dy
             Err(e.into())
         }
     }
-
-    // let mut stream = TcpStream::connect(host).await?;
-
-    // stream.write_all(request.as_bytes()).await?;
-    // stream.flush().await?;
-
-    // --- Read until end of headers ---
-    // let mut buffer = Vec::new();
-    // let mut tmp = [0u8; 1024];
-    // let header_end;
-
-    // let time = Instant::now();
-    // loop {
-    //     let n = stream.read(&mut tmp).await?;
-    //     if n == 0 {
-    //         return Err("connection closed before headers".into());
-    //     }
-    //     buffer.extend_from_slice(&tmp[..n]);
-    //     if let Some(pos) = buffer.windows(4).position(|w| w == b"\r\n\r\n") {
-    //         header_end = pos + 4;
-    //         break;
-    //     }
-    // }
-
-    // --- Parse headers (just enough to know how much to read) ---
-    // let header_text = String::from_utf8_lossy(&buffer[..header_end]);
-    // let mut headers = HashMap::new();
-    // for line in header_text.lines().skip(1) {
-    //     if let Some((k, v)) = line.split_once(": ") {
-    //         headers.insert(k.to_string(), v.to_string());
-    //     }
-    // }
-
-    // // --- Read the body depending on headers ---
-    // if let Some(len) = headers.get("Content-Length") {
-    //     let len = len.parse::<usize>()?;
-    //     while buffer.len() < header_end + len {
-    //         let n = stream.read(&mut tmp).await?;
-    //         if n == 0 {
-    //             break;
-    //         }
-    //         buffer.extend_from_slice(&tmp[..n]);
-    //     }
-    // } else if headers
-    //     .get("Transfer-Encoding")
-    //     .map(|v| v.to_ascii_lowercase())
-    //     == Some("chunked".into())
-    // {
-    //     let mut rest = buffer[header_end..].to_vec();
-    //     loop {
-    //         // Ensure we have a full line
-    //         while !rest.windows(2).any(|w| w == b"\r\n") {
-    //             let n = stream.read(&mut tmp).await?;
-    //             if n == 0 {
-    //                 return Err("connection closed during chunk size".into());
-    //             }
-    //             rest.extend_from_slice(&tmp[..n]);
-    //         }
-
-    //         // Get chunk size
-    //         let pos = rest.windows(2).position(|w| w == b"\r\n").unwrap();
-    //         let line = String::from_utf8_lossy(&rest[..pos]);
-    //         let size = usize::from_str_radix(line.trim(), 16)?;
-    //         let chunk_header_len = pos + 2;
-
-    //         // Copy chunk header into buffer
-    //         buffer.extend_from_slice(&rest[..chunk_header_len]);
-    //         rest.drain(..chunk_header_len);
-
-    //         if size == 0 {
-    //             buffer.extend_from_slice(b"\r\n"); // final CRLF
-    //             break;
-    //         }
-
-    //         // Ensure we have full chunk
-    //         while rest.len() < size + 2 {
-    //             let n = stream.read(&mut tmp).await?;
-    //             if n == 0 {
-    //                 return Err("connection closed during chunk body".into());
-    //             }
-    //             rest.extend_from_slice(&tmp[..n]);
-    //         }
-
-    //         // Copy chunk data + CRLF into buffer
-    //         buffer.extend_from_slice(&rest[..size + 2]);
-    //         rest.drain(..size + 2);
-    //     }
-    // } else {
-    //     // Fallback: read until connection closes
-    //     loop {
-    //         let n = stream.read(&mut tmp).await?;
-    //         if n == 0 {
-    //             break;
-    //         }
-    //         buffer.extend_from_slice(&tmp[..n]);
-    //     }
-    // }
-    // println!("call_3 [+chunk] {:?}", time.elapsed());
-    // Ok(buffer) // full raw binary response (status + headers + body)
 }
 
 async fn capture_http_raw1(request: &[u8], host: &str) -> Result<Vec<u8>, Box<dyn Error>> {
@@ -375,44 +256,29 @@ async fn capture_http_raw1(request: &[u8], host: &str) -> Result<Vec<u8>, Box<dy
                 .map(|v| v.to_ascii_lowercase())
                 == Some("chunked".into())
             {
-                let mut rest = buffer[header_end..].to_vec();
+                println!("** Transfer-Encoding: chunked");
                 loop {
-                    // Ensure we have a full line
-                    while !rest.windows(2).any(|w| w == b"\r\n") {
-                        let n = stream.read(&mut tmp).await?;
-                        if n == 0 {
-                            return Err("connection closed during chunk size".into());
-                        }
-                        rest.extend_from_slice(&tmp[..n]);
-                    }
-
-                    // Get chunk size
-                    let pos = rest.windows(2).position(|w| w == b"\r\n").unwrap();
-                    let line = String::from_utf8_lossy(&rest[..pos]);
-                    let size = usize::from_str_radix(line.trim(), 16)?;
-                    let chunk_header_len = pos + 2;
-
-                    // Copy chunk header into buffer
-                    buffer.extend_from_slice(&rest[..chunk_header_len]);
-                    rest.drain(..chunk_header_len);
-
-                    if size == 0 {
-                        buffer.extend_from_slice(b"\r\n"); // final CRLF
+                    if buffer[header_end..].windows(5).any(|w| w == b"0\r\n\r\n") {
+                        println!("Found chunked terminator!");
                         break;
                     }
 
-                    // Ensure we have full chunk
-                    while rest.len() < size + 2 {
-                        let n = stream.read(&mut tmp).await?;
-                        if n == 0 {
-                            return Err("connection closed during chunk body".into());
-                        }
-                        rest.extend_from_slice(&tmp[..n]);
+                    // Read more data
+                    let n = stream.read(&mut tmp).await?;
+                    if n == 0 {
+                        return Err("connection closed before chunked terminator".into());
                     }
+                    buffer.extend_from_slice(&tmp[..n]);
+                }
 
-                    // Copy chunk data + CRLF into buffer
-                    buffer.extend_from_slice(&rest[..size + 2]);
-                    rest.drain(..size + 2);
+                // Optional: Find exact end position for cleaner termination
+                if let Some(terminator_pos) = buffer[header_end..]
+                    .windows(5)
+                    .position(|w| w == b"0\r\n\r\n")
+                {
+                    let end_pos = header_end + terminator_pos + 5; // Include the terminator
+                    buffer.truncate(end_pos);
+                    println!("Truncated to exact terminator position: {}", end_pos);
                 }
             } else {
                 println!("connection close");
@@ -425,6 +291,7 @@ async fn capture_http_raw1(request: &[u8], host: &str) -> Result<Vec<u8>, Box<dy
                     buffer.extend_from_slice(&tmp[..n]);
                 }
             }
+
             println!(
                 "[+chunk] size: {} bytes, elapsed: {:?}",
                 buffer.len(),
