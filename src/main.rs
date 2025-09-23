@@ -9,8 +9,15 @@ use tokio::time::Instant;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
+    if env::var("LOCAL_DEV").is_ok() {
+        let local_dev = env::var("LOCAL_DEV").unwrap();
+        if local_dev.to_lowercase() == "true".to_string() {
+            call_direct().await;
+            return Ok(());
+        }
+    }
 
+    let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -175,3 +182,5 @@ async fn capture_http_raw(request: &[u8], host: &str) -> Result<Vec<u8>, Box<dyn
         }
     }
 }
+
+async fn call_direct() {}
