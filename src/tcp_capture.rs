@@ -37,14 +37,6 @@ impl TcpCapture {
                         headers.insert(k.to_string(), v.to_string());
                     }
                 }
-                // --- Parse headers (just enough to know how much to read) ---
-                let header_text = String::from_utf8_lossy(&buffer[..header_end]);
-                let mut headers = HashMap::new();
-                for line in header_text.lines().skip(1) {
-                    if let Some((k, v)) = line.split_once(": ") {
-                        headers.insert(k.to_string(), v.to_string());
-                    }
-                }
                 // --- Read the body depending on headers ---
                 if let Some(len) = headers.get("Content-Length") {
                     let len = len.parse::<usize>()?;
