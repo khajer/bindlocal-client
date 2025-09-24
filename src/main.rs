@@ -4,6 +4,7 @@ use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
 mod tcp_capture;
+use chrono::{Datelike, Local, Timelike};
 use tcp_capture::TcpCapture;
 
 #[tokio::main]
@@ -43,7 +44,6 @@ async fn main() -> io::Result<()> {
             continue;
         }
 
-        println!("{:?}", buffer);
         let rec_msg = String::from_utf8_lossy(&buffer[..n]).to_string();
         println!("request : \n{rec_msg}");
 
@@ -76,21 +76,38 @@ fn trim_null_bytes(data: &[u8]) -> &[u8] {
 }
 
 async fn call_direct() -> Result<(), Box<dyn Error>> {
-    let request = format!(
-        "GET {} HTTP/1.1\r\n\
-Host: {}\r\n\
-Connection: keep-alive\r\n\
-User-Agent: RustTcpClient/1.0\r\n\
-Accept: */*\r\n\r\n",
-        "/", "localhost:3000"
-    );
+    let request = b"GET / HTTP/1.1\r\n
+Host: 0001.localhost:8080\r\n
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:143.0) Gecko/20100101 Firefox/143.0\r\n
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n
+Accept-Language: en-US,en;q=0.5\r\n
+Accept-Encoding: gzip, deflate, br, zstd\r\n
+Connection: keep-alive\r\n
+Upgrade-Insecure-Requests: 1\r\n
+Sec-Fetch-Dest: document\r\n
+Sec-Fetch-Mode: navigate\r\n
+Sec-Fetch-Site: none\r\n
+Sec-Fetch-User: ?1\r\n
+If-None-Match: W/\"6af-+M4OSPFNZpwKBdFEydrj+1+V5xo\"\r\n
+Priority: u=0, i\r\n\r\n";
+
     let host = "localhost:3000";
-    let request_buff = request.as_bytes();
+    let request_buff = request.to_vec();
     let response_data = TcpCapture::capture_http_raw(&request_buff, host)
         .await
         .unwrap();
 
-    tokio::fs::write("tmp/response_raw.tcp", &response_data).await?;
+    let now = Local::now();
+    let filename = format!(
+        "tmp/response_{}-{}-{} {}:{}:{}.tcp",
+        now.year(),
+        now.month(),
+        now.day(),
+        now.hour(),
+        now.minute(),
+        now.second()
+    );
+    tokio::fs::write(filename, &response_data).await?;
 
     Ok(())
 }
