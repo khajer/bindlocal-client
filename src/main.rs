@@ -28,8 +28,17 @@ async fn main() -> io::Result<()> {
 
     // Connect to server
     let mut stream = TcpStream::connect("127.0.0.1:9090").await?;
-    let mut first_message = true;
     let mut buffer = [0; 1024];
+
+    let n = stream.read(&mut buffer).await?;
+    if n == 0 {
+        println!("Server Closed Connection.");
+    }
+    let rec_msg = String::from_utf8_lossy(&buffer[..n]);
+    println!("{}", rec_msg);
+
+    let mut cnt = 0;
+
     loop {
         let n = stream.read(&mut buffer).await?;
         if n == 0 {
@@ -37,21 +46,37 @@ async fn main() -> io::Result<()> {
             break;
         }
 
-        if first_message {
-            let rec_msg = String::from_utf8_lossy(&buffer[..n]);
-            first_message = !first_message;
-            println!("{}", rec_msg);
-            continue;
-        }
-
-        let rec_msg = String::from_utf8_lossy(&buffer[..n]).to_string();
-        println!("request : \n{rec_msg}");
+        let now = Local::now();
+        let filename = format!(
+            "tmp/{}_req_{}-{}-{} {}:{}:{}.tcp",
+            cnt,
+            now.year(),
+            now.month(),
+            now.day(),
+            now.hour(),
+            now.minute(),
+            now.second()
+        );
+        tokio::fs::write(filename, &buffer[..n]).await?;
 
         let host = format!("localhost:{local_port}");
         let request_buff = trim_null_bytes(&buffer);
+
         let response_data = TcpCapture::capture_http_raw(&request_buff, host.as_str())
             .await
             .unwrap();
+
+        let filename = format!(
+            "tmp/{}_resp_{}-{}-{} {}:{}:{}.tcp",
+            cnt,
+            now.year(),
+            now.month(),
+            now.day(),
+            now.hour(),
+            now.minute(),
+            now.second()
+        );
+        tokio::fs::write(filename, &response_data).await?;
 
         if let Err(e) = stream.write_all(&response_data).await {
             println!("Send to server fails {:?}", e);
@@ -60,6 +85,8 @@ async fn main() -> io::Result<()> {
         if let Err(e) = stream.flush().await {
             eprintln!("Error flushing TCP stream: {}", e);
         }
+
+        cnt += 1;
     }
 
     Ok(())
