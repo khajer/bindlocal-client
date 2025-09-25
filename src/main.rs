@@ -44,59 +44,64 @@ async fn main() -> io::Result<()> {
 
     loop {
         let mut total_data = Vec::new();
-        let n = stream.read(&mut buffer).await?;
-        if n == 0 {
-            println!("Server Closed Connection.");
+        loop {
+            let n = stream.read(&mut buffer).await?;
+            if n == 0 {
+                println!("Server Closed Connection.");
+                break;
+            }
+            total_data.extend_from_slice(&buffer[..n]);
+
+            if total_data.windows(4).any(|w| w == b"\r\n\r\n") {
+                break;
+            }
+        }
+        let headers_end = total_data
+            .windows(4)
+            .position(|w| w == b"\r\n\r\n")
+            .unwrap()
+            + 4;
+
+        let headers_str = str::from_utf8(&total_data[..headers_end - 4]);
+        let content_length =
+            HttpRequest::parse_content_length(headers_str.expect("NOT_FOUND_CONTENT_LENGTH"));
+
+        if let Some(body_length) = content_length {
+            let body_data_received = total_data.len() - headers_end;
+            let remaining_body = body_length - body_data_received;
+            if remaining_body > 0 {
+                let mut body_buf = vec![0u8; remaining_body];
+                let mut bytes_read = 0;
+
+                while bytes_read < remaining_body {
+                    let n = stream.read(&mut body_buf[bytes_read..]).await?;
+                    if n == 0 {
+                        println!("Server Closed Connection.");
+                    }
+                    bytes_read += n;
+                }
+
+                total_data.extend_from_slice(&body_buf);
+            }
+        }
+
+        save_log_req_resp("request", &total_data).await;
+        let host = format!("localhost:{local_port}");
+
+        let response_data = TcpCapture::capture_http_raw(&total_data, host.as_str())
+            .await
+            .unwrap();
+
+        save_log_req_resp("response", &response_data).await;
+
+        if let Err(e) = stream.write_all(&response_data).await {
+            println!("Send to server fails {:?}", e);
             break;
         }
-        total_data.extend_from_slice(&buffer[..n]);
 
-        if total_data.windows(4).any(|w| w == b"\r\n\r\n") {
-            let headers_end = total_data
-                .windows(4)
-                .position(|w| w == b"\r\n\r\n")
-                .unwrap()
-                + 4;
-
-            let headers_str = str::from_utf8(&total_data[..headers_end - 4]);
-            let content_length =
-                HttpRequest::parse_content_length(headers_str.expect("NOT_FOUND_CONTENT_LENGTH"));
-
-            if let Some(body_length) = content_length {
-                let body_data_received = total_data.len() - headers_end;
-                let remaining_body = body_length - body_data_received;
-                if remaining_body > 0 {
-                    let mut body_buf = vec![0u8; remaining_body];
-                    let mut bytes_read = 0;
-
-                    while bytes_read < remaining_body {
-                        let n = stream.read(&mut body_buf[bytes_read..]).await?;
-                        if n == 0 {
-                            println!("Server Closed Connection.");
-                        }
-                        bytes_read += n;
-                    }
-
-                    total_data.extend_from_slice(&body_buf);
-                }
-            }
-
-            save_log_req_resp("request", &total_data).await;
-            let host = format!("localhost:{local_port}");
-
-            let response_data = TcpCapture::capture_http_raw(&total_data, host.as_str())
-                .await
-                .unwrap();
-
-            save_log_req_resp("response", &response_data).await;
-
-            if let Err(e) = stream.write_all(&response_data).await {
-                println!("Send to server fails {:?}", e);
-            }
-
-            if let Err(e) = stream.flush().await {
-                eprintln!("Error flushing TCP stream: {}", e);
-            }
+        if let Err(e) = stream.flush().await {
+            eprintln!("Error flushing TCP stream: {}", e);
+            break;
         }
     }
 
