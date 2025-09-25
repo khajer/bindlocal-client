@@ -87,17 +87,15 @@ async fn main() -> io::Result<()> {
 
         save_log_req_resp("request", &total_data).await;
         let host = format!("localhost:{local_port}");
-
         let response_data = TcpCapture::capture_http_raw(&total_data, host.as_str())
             .await
             .unwrap();
-
-        save_log_req_resp("response", &response_data).await;
 
         if let Err(e) = stream.write_all(&response_data).await {
             println!("Send to server fails {:?}", e);
             break;
         }
+        save_log_req_resp("response", &response_data).await;
 
         if let Err(e) = stream.flush().await {
             eprintln!("Error flushing TCP stream: {}", e);
