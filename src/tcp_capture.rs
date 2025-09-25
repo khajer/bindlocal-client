@@ -75,17 +75,7 @@ impl TcpCapture {
                         buffer.truncate(end_pos);
                     }
                 } else {
-                    loop {
-                        // Read more data
-                        let n = stream.read(&mut tmp).await?;
-                        if n == 0 {
-                            break;
-                        }
-                        buffer.extend_from_slice(&tmp[..n]);
-                        if buffer[header_end..].windows(4).any(|w| w == b"\r\n\r\n") {
-                            break;
-                        }
-                    }
+                    //response header only
                 }
 
                 println!(
