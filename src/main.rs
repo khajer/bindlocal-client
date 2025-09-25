@@ -1,12 +1,16 @@
 use std::env;
 use std::error::Error;
+use std::str;
 // use tokio::fs::File;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+mod request;
 mod tcp_capture;
 use chrono::{Datelike, Local, Timelike};
 use tcp_capture::TcpCapture;
+
+use crate::request::HttpRequest;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -39,43 +43,64 @@ async fn main() -> io::Result<()> {
     println!("{}", rec_msg);
 
     loop {
+        let mut total_data = Vec::new();
         let n = stream.read(&mut buffer).await?;
         if n == 0 {
             println!("Server Closed Connection.");
             break;
         }
+        total_data.extend_from_slice(&buffer[..n]);
 
-        save_log_req_resp("request", &buffer[..n]).await;
+        if total_data.windows(4).any(|w| w == b"\r\n\r\n") {
+            let headers_end = total_data
+                .windows(4)
+                .position(|w| w == b"\r\n\r\n")
+                .unwrap()
+                + 4;
 
-        let host = format!("localhost:{local_port}");
-        let request_buff = trim_null_bytes(&buffer);
+            let headers_str = str::from_utf8(&total_data[..headers_end - 4]);
+            let content_length =
+                HttpRequest::parse_content_length(headers_str.expect("NOT_FOUND_CONTENT_LENGTH"));
 
-        let response_data = TcpCapture::capture_http_raw(&request_buff, host.as_str())
-            .await
-            .unwrap();
+            if let Some(body_length) = content_length {
+                let body_data_received = total_data.len() - headers_end;
+                let remaining_body = body_length - body_data_received;
+                if remaining_body > 0 {
+                    let mut body_buf = vec![0u8; remaining_body];
+                    let mut bytes_read = 0;
 
-        save_log_req_resp("response", &response_data).await;
+                    while bytes_read < remaining_body {
+                        let n = stream.read(&mut body_buf[bytes_read..]).await?;
+                        if n == 0 {
+                            println!("Server Closed Connection.");
+                        }
+                        bytes_read += n;
+                    }
 
-        if let Err(e) = stream.write_all(&response_data).await {
-            println!("Send to server fails {:?}", e);
-        }
+                    total_data.extend_from_slice(&body_buf);
+                }
+            }
 
-        if let Err(e) = stream.flush().await {
-            eprintln!("Error flushing TCP stream: {}", e);
+            save_log_req_resp("request", &total_data).await;
+            let host = format!("localhost:{local_port}");
+
+            let response_data = TcpCapture::capture_http_raw(&total_data, host.as_str())
+                .await
+                .unwrap();
+
+            save_log_req_resp("response", &response_data).await;
+
+            if let Err(e) = stream.write_all(&response_data).await {
+                println!("Send to server fails {:?}", e);
+            }
+
+            if let Err(e) = stream.flush().await {
+                eprintln!("Error flushing TCP stream: {}", e);
+            }
         }
     }
 
     Ok(())
-}
-
-fn trim_null_bytes(data: &[u8]) -> &[u8] {
-    let start = data.iter().position(|&b| b != 0).unwrap_or(data.len());
-    let end = data.iter().rposition(|&b| b != 0).unwrap_or(data.len());
-    if start >= data.len() {
-        &data[0..0]
-    } else {
-        &data[start..=end]
-    }
 }
 
 async fn call_direct() -> Result<(), Box<dyn Error>> {
