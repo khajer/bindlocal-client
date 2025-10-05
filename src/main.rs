@@ -4,7 +4,7 @@ use std::str;
 // use tokio::fs::File;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use uuid::Uuid;
+// use uuid::Uuid;
 
 mod request;
 mod tcp_capture;
@@ -85,9 +85,9 @@ async fn main() -> io::Result<()> {
                 total_data.extend_from_slice(&body_buf);
             }
         }
-        let trx_id = Uuid::new_v4();
+        // let trx_id = Uuid::new_v4();
 
-        save_log_req_resp(format!("[{trx_id}] request").as_str(), &total_data).await;
+        // save_log_req_resp(format!("[{trx_id}] request").as_str(), &total_data).await;
         let host = format!("localhost:{local_port}");
         let response_data = TcpCapture::capture_http_raw(&total_data, host.as_str())
             .await
@@ -97,7 +97,7 @@ async fn main() -> io::Result<()> {
             println!("Send to server fails {:?}", e);
             break;
         }
-        save_log_req_resp(format!("[{trx_id}] response").as_str(), &response_data).await;
+        // save_log_req_resp(format!("[{trx_id}] response").as_str(), &response_data).await;
 
         if let Err(e) = stream.flush().await {
             eprintln!("Error flushing TCP stream: {}", e);
@@ -144,29 +144,29 @@ Priority: u=0, i\r\n\r\n";
 
     Ok(())
 }
-async fn save_log_req_resp(intro_str: &str, data: &[u8]) {
-    let now = Local::now();
+// async fn save_log_req_resp(intro_str: &str, data: &[u8]) {
+//     let now = Local::now();
 
-    let intro_str = format!(
-        "[{}{:02}{:02} {:02}:{:02}.{:02}] {intro_str} \n",
-        now.year(),
-        now.month().to_string(),
-        now.day(),
-        now.hour(),
-        now.minute(),
-        now.second()
-    );
+//     let intro_str = format!(
+//         "[{}{:02}{:02} {:02}:{:02}.{:02}] {intro_str} \n",
+//         now.year(),
+//         now.month().to_string(),
+//         now.day(),
+//         now.hour(),
+//         now.minute(),
+//         now.second()
+//     );
 
-    println!("{intro_str}");
-    println!("{}", String::from_utf8_lossy(data));
+//     println!("{intro_str}");
+//     println!("{}", String::from_utf8_lossy(data));
 
-    // let filename = format!("logs/{}{}{}.log", now.year(), now.month(), now.day());
-    // let mut f = File::options()
-    //     .append(true)
-    //     .create(true)
-    //     .open(filename)
-    //     .await
-    //     .unwrap();
-    // f.write_all(intro_str.as_bytes()).await.unwrap();
-    // f.write_all(&data).await.unwrap();
-}
+//     // let filename = format!("logs/{}{}{}.log", now.year(), now.month(), now.day());
+//     // let mut f = File::options()
+//     //     .append(true)
+//     //     .create(true)
+//     //     .open(filename)
+//     //     .await
+//     //     .unwrap();
+//     // f.write_all(intro_str.as_bytes()).await.unwrap();
+//     // f.write_all(&data).await.unwrap();
+// }

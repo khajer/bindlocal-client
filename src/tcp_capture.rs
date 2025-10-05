@@ -7,7 +7,7 @@ use tokio::time::Instant;
 pub struct TcpCapture {}
 impl TcpCapture {
     pub async fn capture_http_raw(request: &[u8], host: &str) -> Result<Vec<u8>, Box<dyn Error>> {
-        println!("Connecting to {}", host);
+        // println!("Connecting to {}", host);
         match TcpStream::connect(host).await {
             Ok(mut stream) => {
                 stream.write_all(request).await?;
@@ -54,7 +54,7 @@ impl TcpCapture {
                 {
                     loop {
                         if buffer[header_end..].windows(5).any(|w| w == b"0\r\n\r\n") {
-                            println!("Found chunked terminator!");
+                            // println!("Found chunked terminator!");
                             break;
                         }
 
