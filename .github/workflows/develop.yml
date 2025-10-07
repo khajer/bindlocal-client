@@ -25,3 +25,9 @@ jobs:
         mkdir dist
         cp target/debug/connl dist/
         tar -czf myapp-${GITHUB_REF_NAME}-macos.tar.gz -C dist connl
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v2
+      with:
+        files: myapp-${GITHUB_REF_NAME}-macos.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
