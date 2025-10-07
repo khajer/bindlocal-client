@@ -3,5 +3,5 @@ get receive header and forward to localhost : port
 and response
 ## run local dev
 ```
-export LOCAL_DEV=true
+bind-local <YOU_PORT>
 ```
