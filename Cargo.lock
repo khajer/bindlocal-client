@@ -48,16 +48,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bindlocal-client"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "rand",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "bitflags"
 version = "2.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -102,6 +92,16 @@ dependencies = [
  "num-traits",
  "wasm-bindgen",
  "windows-link",
+]
+
+[[package]]
+name = "connl"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "rand",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

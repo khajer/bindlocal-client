@@ -1,5 +1,5 @@
 [package]
-name = "bindlocal-client"
+name = "connl"
 version = "0.1.0"
 edition = "2024"
 
