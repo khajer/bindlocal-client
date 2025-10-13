@@ -23,6 +23,14 @@ async fn main() -> io::Result<()> {
         }
     }
 
+    let host_server;
+    if env::var("HOST_SERVER").is_ok() {
+        host_server = env::var("HOST_SERVER").unwrap();
+    } else {
+        // host_server = "127.0.0.1:9090".to_string();
+        host_server = "connl.io:9090".to_string();
+    }
+
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         return Err(io::Error::new(
@@ -33,7 +41,7 @@ async fn main() -> io::Result<()> {
     let local_port = args[1].as_str();
 
     // Connect to server
-    let mut stream = TcpStream::connect("127.0.0.1:9090").await?;
+    let mut stream = TcpStream::connect(host_server).await?;
     let mut buffer = [0; 1024];
 
     let n = stream.read(&mut buffer).await?;

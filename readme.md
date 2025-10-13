@@ -4,3 +4,7 @@ get receive header and forward to localhost : port and response
 ```
 connl <YOU_PORT>
 ```
+## set server before run
+```
+export HOST_SERVER=connl.io:9090
+```
