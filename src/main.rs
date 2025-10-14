@@ -1,14 +1,10 @@
 use std::env;
-use std::error::Error;
 use std::str;
-// use tokio::fs::File;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-// use uuid::Uuid;
 
 mod request;
 mod tcp_capture;
-use chrono::{Datelike, Local, Timelike};
 use tcp_capture::TcpCapture;
 
 use crate::request::HttpRequest;
