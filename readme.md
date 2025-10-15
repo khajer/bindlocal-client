@@ -1,11 +1,19 @@
-# connecting local by client app
-get receive header and forward to localhost : port and response
-## run local dev
+# Connl Application 
+expose your local app to the internet with one command line.
+
+
+# build from source 
 ```
-connl <YOU_PORT>
+cargo build --release
 ```
 
-## set server before run if you want to connect another server
+# how to install with brew
 ```
-export HOST_SERVER=connl.io:9090
+brew tap khajer/connl
+brew install connl
+```
+
+# how to use 
+```
+connl 3000 # expose localhost:3000 to connl.io
 ```
