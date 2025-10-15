@@ -22,10 +22,6 @@ async fn main() -> io::Result<()> {
     if args.len() < 2 {
         show_help();
         return Ok(());
-        // return Err(io::Error::new(
-        //     io::ErrorKind::InvalidInput,
-        //     "missing parameter",
-        // ));
     }
     let second_param = args[1].as_str();
     let local_port;
