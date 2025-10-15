@@ -1,6 +1,5 @@
 # Connl Application 
-expose your local app to the internet with one command line.
-
+expose your local app to the internet with one command line. the host is connl.io 
 
 # build from source 
 ```
