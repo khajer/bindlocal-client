@@ -20,12 +20,21 @@ async fn main() -> io::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "missing parameter",
-        ));
+        show_help();
+        return Ok(());
+        // return Err(io::Error::new(
+        //     io::ErrorKind::InvalidInput,
+        //     "missing parameter",
+        // ));
     }
-    let local_port = args[1].as_str();
+    let second_param = args[1].as_str();
+    let local_port;
+    if second_param == "version" {
+        println!("connl version 0.0.2");
+        return Ok(());
+    } else {
+        local_port = second_param
+    }
 
     // Connect to server
     let mut stream = TcpStream::connect(host_server).await?;
@@ -80,9 +89,7 @@ async fn main() -> io::Result<()> {
                 total_data.extend_from_slice(&body_buf);
             }
         }
-        // let trx_id = Uuid::new_v4();
 
-        // save_log_req_resp(format!("[{trx_id}] request").as_str(), &total_data).await;
         let host = format!("localhost:{local_port}");
         let response_data = TcpCapture::capture_http_raw(&total_data, host.as_str())
             .await
@@ -92,7 +99,6 @@ async fn main() -> io::Result<()> {
             println!("Send to server fails {:?}", e);
             break;
         }
-        // save_log_req_resp(format!("[{trx_id}] response").as_str(), &response_data).await;
 
         if let Err(e) = stream.flush().await {
             eprintln!("Error flushing TCP stream: {}", e);
@@ -101,4 +107,11 @@ async fn main() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+fn show_help() {
+    println!(
+        "usage:\tconnl <port>\texpose local :<port>
+\tconnl version\tshow version"
+    );
 }
