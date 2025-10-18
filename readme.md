@@ -1,7 +1,7 @@
-# Connl Application 
-expose your local app to the internet with one command line. the host is connl.io 
+# Connl Application
+expose your local app to the internet with one command line. the host is connl.io
 
-# build from source 
+# build from source
 ```
 cargo build --release
 ```
@@ -12,7 +12,13 @@ brew tap khajer/connl
 brew install connl
 ```
 
-# how to use 
+# how to use
 ```
 connl 3000 # expose localhost:3000 to connl.io
+```
+
+# test on localhost
+```
+export HOST_SERVER_TCP=localhost:9090
+export HOST_SERVER_HTTP=localhost:8080
 ```
