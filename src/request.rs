@@ -13,6 +13,17 @@ impl HttpRequest {
         }
         None
     }
+    pub fn parse_content_request_format(headers: &str) -> String {
+        let line = headers.lines().nth(0);
+        if let Some(value) = line {
+            if let Some(space_index) = value.rfind(" ") {
+                return value[0..space_index].to_string() + " ";
+            }
+
+            return value.to_string();
+        }
+        "".to_string()
+    }
 }
 
 #[cfg(test)]
@@ -38,5 +49,12 @@ mod tests {
         let headers = "Content-Length:\r\n";
         let result = HttpRequest::parse_content_length(headers);
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_content_request() {
+        let headers = "GET / HTTP/1.1\r\n";
+        let result = HttpRequest::parse_content_request_format(headers);
+        assert_eq!(result, "GET / ");
     }
 }
