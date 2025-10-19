@@ -17,7 +17,19 @@ brew install connl
 connl 3000 # expose localhost:3000 to connl.io
 ```
 
-# test on localhost
+# development on localhost
+you can develop this programming with own server
+
+## server
+pull the code at [https://github.com/khajer/bindlocal-server](https://github.com/khajer/bindlocal-server)
+```
+git clone git@github.com:khajer/bindlocal-server.git
+cd bindlocal-server
+cargo run
+```
+
+## client
+set environment localhost server before run
 ```
 export HOST_SERVER_TCP=localhost:9090
 export HOST_SERVER_HTTP=localhost:8080
