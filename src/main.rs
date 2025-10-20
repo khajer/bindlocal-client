@@ -61,7 +61,12 @@ async fn main() -> io::Result<()> {
     let rec_msg = String::from_utf8_lossy(&buffer[..n]);
 
     if rec_msg.to_string().to_lowercase().contains("err") {
-        println!("Connect Server Error: {}", rec_msg);
+        let err_code = rec_msg.split(":").nth(0).unwrap_or("Unknown");
+        if err_code == "ERR001" {
+            println!("please update version : https://connl.io/update_version.html");
+        } else {
+            println!("Connect Server Error: {}", rec_msg);
+        }
         return Ok(());
     }
 
