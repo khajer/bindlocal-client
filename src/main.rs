@@ -14,7 +14,9 @@ use crate::request::HttpRequest;
 use colored::Colorize;
 use scrolling_text::ScrollingText;
 
-const CLIENT_VERSION: &str = "0.0.2";
+const CLIENT_VERSION: &str = "0.0.3";
+const HOST_SERVER_TCP: &str = "connl.io:9090";
+const HOST_NAME: &str = "connl.io";
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -22,7 +24,7 @@ async fn main() -> io::Result<()> {
     if env::var("HOST_SERVER_TCP").is_ok() {
         host_server = env::var("HOST_SERVER_TCP").unwrap();
     } else {
-        host_server = "connl.io:9090".to_string();
+        host_server = HOST_SERVER_TCP.to_string();
     }
 
     let args: Vec<String> = env::args().collect();
@@ -30,13 +32,10 @@ async fn main() -> io::Result<()> {
         show_help();
         return Ok(());
     }
-    let second_param = args[1].as_str();
-    let local_port;
-    if second_param == "version" {
+    let local_port = args[1].as_str();
+    if local_port == "version" {
         println!("connl version {}", CLIENT_VERSION);
         return Ok(());
-    } else {
-        local_port = second_param
     }
 
     // Connect to server
@@ -44,7 +43,15 @@ async fn main() -> io::Result<()> {
     let mut buffer = [0; 1024];
 
     // send message first
-    let req_connect = format!("connl {}", CLIENT_VERSION);
+
+    // specific name sub-domain
+    let req_connect;
+    if args.len() >= 4 && args[2].as_str() == "--subdomain" {
+        req_connect = format!("connl {} {}", CLIENT_VERSION, args[3].as_str());
+    } else {
+        req_connect = format!("connl {}", CLIENT_VERSION);
+    }
+
     if let Err(e) = stream.write_all(req_connect.as_bytes()).await {
         println!("Send data to server fails {:?}", e);
         return Ok(());
@@ -159,9 +166,10 @@ async fn main() -> io::Result<()> {
 
 fn show_help() {
     println!(
-        "connl.io v:{CLIENT_VERSION}
-usage:\tconnl <port>\t\texpose localhost with port number
-\tconnl version\t\tshow version"
+        "connl v:{CLIENT_VERSION}
+usage:\tconnl <port>]\t\t\t\texpose localhost with port number
+\tconnl <port> --subdomain <myapp>\texpose localhost with port number and <myapp> subdomain
+\tconnl version\t\t\t\tshow version"
     );
 }
 
@@ -170,7 +178,7 @@ fn show_monitor(url: String, local_port: u16) {
     if env::var("HOST_SERVER_HTTP").is_ok() {
         host = env::var("HOST_SERVER_HTTP").unwrap();
     } else {
-        host = "connl.io".to_string();
+        host = HOST_NAME.to_string();
     }
     let txt = format!(
         "
