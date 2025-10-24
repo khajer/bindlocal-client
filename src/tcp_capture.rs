@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-// use tokio::time::Instant;
 
 pub struct TcpCapture {}
 impl TcpCapture {
@@ -11,7 +10,6 @@ impl TcpCapture {
         host: &str,
         status_text: &mut String,
     ) -> Result<Vec<u8>, Box<dyn Error>> {
-        // println!("Connecting to {}", host);
         match TcpStream::connect(host).await {
             Ok(mut stream) => {
                 stream.write_all(request).await?;
@@ -20,7 +18,6 @@ impl TcpCapture {
                 let mut tmp = [0u8; 1024];
                 let header_end;
 
-                // let time = Instant::now();
                 loop {
                     let n = stream.read(&mut tmp).await?;
                     if n == 0 {
@@ -32,7 +29,6 @@ impl TcpCapture {
                         break;
                     }
                 }
-
                 // --- Parse headers (just enough to know how much to read) ---
                 let header_text = String::from_utf8_lossy(&buffer[..header_end]);
                 let status = parse_response_header(&header_text);

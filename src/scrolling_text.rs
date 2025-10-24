@@ -32,14 +32,11 @@ impl ScrollingText {
 
     fn print(&mut self) {
         if self.is_max {
-            // Move cursor up 4 lines to overwrite previous output
             print!("\x1B[{}A", self.max_lines);
-            // Print all current lines
             for line in &self.lines {
                 print!("\x1B[2K{}\n", line);
             }
         } else {
-            // Before reaching max, only print the last line added
             if let Some(last_line) = self.lines.back() {
                 print!("\x1B[2K{}\n", last_line);
             }
