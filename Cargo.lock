@@ -105,7 +105,7 @@ dependencies = [
 
 [[package]]
 name = "connl"
-version = "0.0.2"
+version = "0.1.0"
 dependencies = [
  "chrono",
  "colored",
