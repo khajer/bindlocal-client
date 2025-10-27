@@ -14,7 +14,7 @@ use crate::request::HttpRequest;
 use colored::Colorize;
 use scrolling_text::ScrollingText;
 
-const CLIENT_VERSION: &str = "0.0.3";
+const CLIENT_VERSION: &str = "0.1.0";
 const HOST_SERVER_TCP: &str = "connl.io:9090";
 const HOST_NAME: &str = "connl.io";
 
