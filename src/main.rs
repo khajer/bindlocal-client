@@ -138,15 +138,23 @@ async fn main() -> io::Result<()> {
         }
 
         let host = format!("localhost:{local_port}");
-        let response_data =
-            TcpCapture::capture_http_raw(&total_data, host.as_str(), &mut status_text)
-                .await
-                .unwrap();
 
-        // before sending data to server
-        if let Err(e) = stream.write_all(&response_data).await {
-            println!("Send data to server fails {:?}", e);
-            break;
+        if let Ok(response) =
+            TcpCapture::capture_http_raw(&total_data, host.as_str(), &mut status_text).await
+        {
+            // before sending data to server
+            if let Err(e) = stream.write_all(&response).await {
+                println!("Send data to server fails {:?}", e);
+                break;
+            }
+        } else {
+            println!("Fail to capture HTTP response");
+            let err_connection_refused = "CLIENT_ERROR:ERR_CONNECTION_REFUSED\r\n\r\n";
+            status_text = "CLIENT_ERROR:ERR_CONNECTION_REFUSED".to_string();
+            if let Err(e) = stream.write_all(&err_connection_refused.as_bytes()).await {
+                println!("Send data to server fails {:?}", e);
+                break;
+            }
         }
 
         if let Err(e) = stream.flush().await {
@@ -154,6 +162,7 @@ async fn main() -> io::Result<()> {
             break;
         }
 
+        // print log
         if status_text.len() > screen_w {
             display.append(format!("{}", &status_text[..screen_w]));
         } else {
