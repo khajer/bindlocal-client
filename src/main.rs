@@ -18,8 +18,51 @@ const CLIENT_VERSION: &str = "0.1.1";
 const HOST_SERVER_TCP: &str = "connl.io:9090";
 const HOST_NAME: &str = "connl.io";
 
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(
+    name = "connl",
+    version = CLIENT_VERSION,
+    about = "",
+    long_about = None,
+    disable_version_flag = true,
+    override_usage = "
+\tconnl [PORT] \t\t\t\texpose localhost with port number"
+)]
+struct Args {
+    #[arg(help = "Port number to expose")]
+    port: Option<u16>,
+
+    #[arg(long, help = "Subdomain name for the exposed service")]
+    subdomain: Option<String>,
+
+    #[arg(
+        long,
+        action = clap::ArgAction::SetTrue,
+        help = "Show version information"
+    )]
+    version: bool,
+}
 #[tokio::main]
 async fn main() -> io::Result<()> {
+    let args = Args::parse();
+
+    // Handle version flag
+    if args.version {
+        println!("connl v:{}", CLIENT_VERSION);
+        return Ok(());
+    }
+
+    // Check if port is provided
+    let local_port = match args.port {
+        Some(port) => port,
+        None => {
+            Args::parse_from(["connl", "--help"]);
+            return Ok(());
+        }
+    };
+
     let host_server;
     if env::var("HOST_SERVER_TCP").is_ok() {
         host_server = env::var("HOST_SERVER_TCP").unwrap();
@@ -27,27 +70,15 @@ async fn main() -> io::Result<()> {
         host_server = HOST_SERVER_TCP.to_string();
     }
 
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        show_help();
-        return Ok(());
-    }
-    let local_port = args[1].as_str();
-    if local_port == "version" {
-        println!("connl version {}", CLIENT_VERSION);
-        return Ok(());
-    }
-
     // Connect to server
     let mut stream = TcpStream::connect(host_server).await?;
     let mut buffer = [0; 1024];
 
     // send message first
-
     // specific name sub-domain
     let req_connect;
-    if args.len() >= 4 && args[2].as_str() == "--subdomain" {
-        req_connect = format!("connl {} {}", CLIENT_VERSION, args[3].as_str());
+    if let Some(subdomain) = args.subdomain {
+        req_connect = format!("connl {} {}", CLIENT_VERSION, subdomain);
     } else {
         req_connect = format!("connl {}", CLIENT_VERSION);
     }
@@ -77,10 +108,7 @@ async fn main() -> io::Result<()> {
         return Ok(());
     }
 
-    show_monitor(
-        rec_msg.to_string(),
-        local_port.parse::<u16>().expect("Failed to parse to u16"),
-    );
+    show_monitor(rec_msg.to_string(), local_port);
 
     let screen_w = terminal_size()
         .map(|(Width(w), _)| w as usize)
@@ -171,15 +199,6 @@ async fn main() -> io::Result<()> {
     }
 
     Ok(())
-}
-
-fn show_help() {
-    println!(
-        "connl v:{CLIENT_VERSION}
-usage:\tconnl <port>]\t\t\t\texpose localhost with port number
-\tconnl <port> --subdomain <myapp>\texpose localhost with port number and <myapp> subdomain
-\tconnl version\t\t\t\tshow version"
-    );
 }
 
 fn show_monitor(url: String, local_port: u16) {
