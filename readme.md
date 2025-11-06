@@ -13,6 +13,10 @@ Expose your local applications to the internet with a single command. Connl crea
 
 ## Installation
 
+### Curl
+```sh
+curl -sSfL https://raw.githubusercontent.com/khajer/bindlocal-client/main/install.sh | bash
+```
 ### Homebrew (Recommended)
 ```sh
 brew tap khajer/connl
