@@ -40,8 +40,8 @@ connl 3000
 ```
 
 This will give you a public URL like:
-- `http://my-app.connl.io` → `http://localhost:3000`
-- `https://my-app.connl.io` → `http://localhost:3000`
+- `http://app-1290.connl.io` → `http://localhost:3000`
+- `https://app-1290.connl.io` → `http://localhost:3000`
 
 ## 📖 Usage
 
