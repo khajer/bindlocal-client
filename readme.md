@@ -43,6 +43,8 @@ This will give you a public URL like:
 - `http://app-1290.connl.io` → `http://localhost:3000`
 - `https://app-1290.connl.io` → `http://localhost:3000`
 
+The server will give a random subdomain. (ex. app-1290)
+
 ## 📖 Usage
 
 ### Basic Usage
