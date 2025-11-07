@@ -104,5 +104,5 @@ The client establishes a persistent TCP connection to the server, which then for
 - [Client Repository](https://github.com/khajer/bindlocal-client)
 - [Website](https://connl.io)
 
-# Contact Me
+## Contact Me
 - [khajer@gmail.com](mailto:khajer@gmail.com)
