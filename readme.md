@@ -13,6 +13,10 @@ Expose your local applications to the internet with a single command. Connl crea
 
 ## Installation
 
+### Curl
+```sh
+curl -sSfL https://raw.githubusercontent.com/khajer/bindlocal-client/main/install.sh | bash
+```
 ### Homebrew (Recommended)
 ```sh
 brew tap khajer/connl
@@ -36,8 +40,10 @@ connl 3000
 ```
 
 This will give you a public URL like:
-- `http://my-app.connl.io` → `http://localhost:3000`
-- `https://my-app.connl.io` → `http://localhost:3000`
+- `http://app-1290.connl.io` → `http://localhost:3000`
+- `https://app-1290.connl.io` → `http://localhost:3000`
+
+The server will give a random subdomain. (ex. app-1290)
 
 ## 📖 Usage
 
@@ -98,5 +104,5 @@ The client establishes a persistent TCP connection to the server, which then for
 - [Client Repository](https://github.com/khajer/bindlocal-client)
 - [Website](https://connl.io)
 
-# Contact Me
+## Contact Me
 - [khajer@gmail.com](mailto:khajer@gmail.com)
