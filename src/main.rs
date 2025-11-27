@@ -4,6 +4,7 @@ use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
 use terminal_size::{Width, terminal_size};
+mod monitor;
 mod request;
 mod scrolling_text;
 mod tcp_capture;
@@ -11,7 +12,7 @@ mod tcp_capture;
 use tcp_capture::TcpCapture;
 
 use crate::request::HttpRequest;
-use colored::Colorize;
+use monitor::Monitor;
 use scrolling_text::ScrollingText;
 
 const CLIENT_VERSION: &str = "0.1.1";
@@ -75,7 +76,6 @@ async fn main() -> io::Result<()> {
     let mut buffer = [0; 1024];
 
     // send message first
-    // specific name sub-domain
     let req_connect;
     if let Some(subdomain) = args.subdomain {
         req_connect = format!("connl {} {}", CLIENT_VERSION, subdomain);
@@ -108,7 +108,8 @@ async fn main() -> io::Result<()> {
         return Ok(());
     }
 
-    show_monitor(rec_msg.to_string(), local_port);
+    // show_monitor(rec_msg.to_string(), local_port);
+    Monitor::show_status(rec_msg.to_string(), local_port);
 
     let screen_w = terminal_size()
         .map(|(Width(w), _)| w as usize)
@@ -199,26 +200,4 @@ async fn main() -> io::Result<()> {
     }
 
     Ok(())
-}
-
-fn show_monitor(url: String, local_port: u16) {
-    let host;
-    if env::var("HOST_SERVER_HTTP").is_ok() {
-        host = env::var("HOST_SERVER_HTTP").unwrap();
-    } else {
-        host = HOST_NAME.to_string();
-    }
-    let txt = format!(
-        "
-connl.io v:{CLIENT_VERSION}
-\t{}\t\t\t\t\t{}
-{}\thttp://{url}.{host}\t-> \thttp://localhost:{local_port}
-{}\thttps://{url}.{host}\t-> \thttp://localhost:{local_port}
---",
-        "online".green(),
-        "local".green(),
-        "http:".green(),
-        "https:".green()
-    );
-    println!("{txt}");
 }
