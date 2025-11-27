@@ -108,7 +108,6 @@ async fn main() -> io::Result<()> {
         return Ok(());
     }
 
-    // show_monitor(rec_msg.to_string(), local_port);
     Monitor::show_status(rec_msg.to_string(), local_port);
 
     let screen_w = terminal_size()
