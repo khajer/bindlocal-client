@@ -15,7 +15,7 @@ impl TcpCapture {
                 stream.write_all(request).await?;
                 stream.flush().await?;
                 let mut buffer = Vec::new();
-                let mut tmp = [0u8; 1024];
+                let mut tmp = [0u8; 4096];
                 let header_end;
 
                 loop {
