@@ -19,6 +19,9 @@ const CLIENT_VERSION: &str = "0.1.1";
 const HOST_SERVER_TCP: &str = "connl.io:9090";
 const HOST_NAME: &str = "connl.io";
 
+const CLIENT_ERROR: &str = "CLIENT_ERROR:ERR_CONNECTION_REFUSED";
+const NOT_FOUND_CONTENT_LENGTH: &str = "CLIENT_ERROR:NOT_FOUND_CONTENT_LENGTH";
+
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -139,12 +142,11 @@ async fn main() -> io::Result<()> {
 
         let headers_str = str::from_utf8(&total_data[..headers_end - 4]);
 
-        status_text = HttpRequest::parse_content_request_format(
-            headers_str.expect("NOT_FOUND_CONTENT_LENGTH"),
-        );
+        status_text =
+            HttpRequest::parse_content_request_format(headers_str.expect(NOT_FOUND_CONTENT_LENGTH));
 
         let content_length =
-            HttpRequest::parse_content_length(headers_str.expect("NOT_FOUND_CONTENT_LENGTH"));
+            HttpRequest::parse_content_length(headers_str.expect(NOT_FOUND_CONTENT_LENGTH));
 
         if let Some(body_length) = content_length {
             let body_data_received = total_data.len() - headers_end;
@@ -177,8 +179,9 @@ async fn main() -> io::Result<()> {
             }
         } else {
             println!("Fail to capture HTTP response");
-            let err_connection_refused = "CLIENT_ERROR:ERR_CONNECTION_REFUSED\r\n\r\n";
-            status_text = "CLIENT_ERROR:ERR_CONNECTION_REFUSED".to_string();
+            let err_connection_refused = format!("{}\r\n\r\n", CLIENT_ERROR);
+
+            status_text = CLIENT_ERROR.to_string();
             if let Err(e) = stream.write_all(&err_connection_refused.as_bytes()).await {
                 println!("Send data to server fails {:?}", e);
                 break;
