@@ -22,6 +22,9 @@ const HOST_NAME: &str = "connl.io";
 const CLIENT_ERROR: &str = "CLIENT_ERROR:ERR_CONNECTION_REFUSED";
 const NOT_FOUND_CONTENT_LENGTH: &str = "CLIENT_ERROR:NOT_FOUND_CONTENT_LENGTH";
 
+const TWO_DELIMETER: &str = "\r\n\r\n";
+const TWO_DELIMETER_BYTES: &[u8] = b"\r\n\r\n";
+
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -130,13 +133,13 @@ async fn main() -> io::Result<()> {
             }
             total_data.extend_from_slice(&buffer[..n]);
 
-            if total_data.windows(4).any(|w| w == b"\r\n\r\n") {
+            if total_data.windows(4).any(|w| w == TWO_DELIMETER_BYTES) {
                 break;
             }
         }
         let headers_end = total_data
             .windows(4)
-            .position(|w| w == b"\r\n\r\n")
+            .position(|w| w == TWO_DELIMETER_BYTES)
             .unwrap()
             + 4;
 
@@ -179,7 +182,7 @@ async fn main() -> io::Result<()> {
             }
         } else {
             println!("Fail to capture HTTP response");
-            let err_connection_refused = format!("{}\r\n\r\n", CLIENT_ERROR);
+            let err_connection_refused = format!("{}{}", CLIENT_ERROR, TWO_DELIMETER);
 
             status_text = CLIENT_ERROR.to_string();
             if let Err(e) = stream.write_all(&err_connection_refused.as_bytes()).await {
