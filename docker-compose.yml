@@ -1,0 +1,15 @@
+services:
+  connl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: connl:latest
+    container_name: connl-client
+
+    network_mode: host
+    environment:
+    command: ["3000"]
+
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

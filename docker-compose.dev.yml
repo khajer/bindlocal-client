@@ -1,0 +1,20 @@
+services:
+  connl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: connl:dev
+    container_name: connl-client-dev
+
+    network_mode: host
+
+    environment:
+      - HOST_SERVER_TCP=localhost:9090
+      - HOST_SERVER_HTTP=localhost:8080
+
+    command: ["3000"]
+
+    stdin_open: true
+    tty: true
+
+    restart: on-failure

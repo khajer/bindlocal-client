@@ -1,0 +1,28 @@
+# Rust build artifacts
+target/
+Cargo.lock
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Documentation
+readme.md
+LICENSE
+*.md
+
+# Install scripts
+install.sh
