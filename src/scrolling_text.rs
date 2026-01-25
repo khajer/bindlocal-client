@@ -17,16 +17,13 @@ impl ScrollingText {
     }
 
     pub fn append(&mut self, text: String) {
-        // If we're at capacity, remove the first (oldest) line
         if self.lines.len() >= self.max_lines {
             self.lines.pop_front();
             self.is_max = true;
         }
 
-        // Add the new line at the end
         self.lines.push_back(text);
 
-        // Print the current state
         self.print();
     }
 

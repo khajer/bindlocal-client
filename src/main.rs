@@ -57,7 +57,7 @@ async fn main() -> io::Result<()> {
 
     // Handle version flag
     if args.version {
-        println!("connl v:{}", CLIENT_VERSION);
+        println!("connl v:{CLIENT_VERSION}");
         return Ok(());
     }
 
@@ -84,9 +84,9 @@ async fn main() -> io::Result<()> {
     // send message first
     let req_connect;
     if let Some(subdomain) = args.subdomain {
-        req_connect = format!("connl {} {}", CLIENT_VERSION, subdomain);
+        req_connect = format!("connl {CLIENT_VERSION} {subdomain}");
     } else {
-        req_connect = format!("connl {}", CLIENT_VERSION);
+        req_connect = format!("connl {CLIENT_VERSION}");
     }
 
     if let Err(e) = stream.write_all(req_connect.as_bytes()).await {
@@ -109,7 +109,7 @@ async fn main() -> io::Result<()> {
         if err_code == "ERR001" {
             println!("please update version : https://connl.io/update_version.html");
         } else {
-            println!("Connect Server Error: {}", rec_msg);
+            println!("Connect Server Error: {rec_msg}");
         }
         return Ok(());
     }
@@ -182,7 +182,7 @@ async fn main() -> io::Result<()> {
             }
         } else {
             println!("Fail to capture HTTP response");
-            let err_connection_refused = format!("{}{}", CLIENT_ERROR, TWO_DELIMETER);
+            let err_connection_refused = format!("{CLIENT_ERROR}{TWO_DELIMETER}");
 
             status_text = CLIENT_ERROR.to_string();
             if let Err(e) = stream.write_all(&err_connection_refused.as_bytes()).await {
@@ -200,7 +200,7 @@ async fn main() -> io::Result<()> {
         if status_text.len() > screen_w {
             display.append(format!("{}", &status_text[..screen_w]));
         } else {
-            display.append(format!("{}", status_text));
+            display.append(format!("{status_text}"));
         }
     }
 
