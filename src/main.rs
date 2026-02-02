@@ -2,18 +2,17 @@ use std::env;
 use std::str;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-
 use terminal_size::{Width, terminal_size};
+use tcp_capture::TcpCapture;
+use crate::request::HttpRequest;
+use monitor::Monitor;
+use scrolling_text::ScrollingText;
+use clap::Parser;
+
 mod monitor;
 mod request;
 mod scrolling_text;
 mod tcp_capture;
-
-use tcp_capture::TcpCapture;
-
-use crate::request::HttpRequest;
-use monitor::Monitor;
-use scrolling_text::ScrollingText;
 
 const CLIENT_VERSION: &str = "0.1.1";
 const HOST_SERVER_TCP: &str = "connl.io:9090";
@@ -25,7 +24,8 @@ const NOT_FOUND_CONTENT_LENGTH: &str = "CLIENT_ERROR:NOT_FOUND_CONTENT_LENGTH";
 const TWO_DELIMETER: &str = "\r\n\r\n";
 const TWO_DELIMETER_BYTES: &[u8] = b"\r\n\r\n";
 
-use clap::Parser;
+const ERR_001: &str = "ERR001";
+const TXT_ERR: &str = "err";
 
 #[derive(Parser, Debug)]
 #[command(
@@ -104,9 +104,9 @@ async fn main() -> io::Result<()> {
     }
     let rec_msg = String::from_utf8_lossy(&buffer[..n]);
 
-    if rec_msg.to_string().to_lowercase().contains("err") {
+    if rec_msg.to_string().to_lowercase().contains(TXT_ERR) {
         let err_code = rec_msg.split(":").nth(0).unwrap_or("Unknown");
-        if err_code == "ERR001" {
+        if err_code == ERR_001 {
             println!("please update version : https://connl.io/update_version.html");
         } else {
             println!("Connect Server Error: {rec_msg}");
@@ -203,6 +203,5 @@ async fn main() -> io::Result<()> {
             display.append(format!("{status_text}"));
         }
     }
-
     Ok(())
 }
