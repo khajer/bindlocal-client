@@ -3,8 +3,8 @@ use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-const TWO_DELIMETER_BYTES: &[u8] = b"\r\n\r\n";
-const END_DELIMETER_BYTES: &[u8] = b"0\r\n\r\n";
+const TWO_DELIMITER_BYTES: &[u8] = b"\r\n\r\n";
+const END_DELIMITER_BYTES: &[u8] = b"0\r\n\r\n";
 
 pub struct TcpCapture {}
 impl TcpCapture {
@@ -27,7 +27,7 @@ impl TcpCapture {
                         return Err("connection closed before headers".into());
                     }
                     buffer.extend_from_slice(&tmp[..n]);
-                    if let Some(pos) = buffer.windows(4).position(|w| w == TWO_DELIMETER_BYTES) {
+                    if let Some(pos) = buffer.windows(4).position(|w| w == TWO_DELIMITER_BYTES) {
                         header_end = pos + 4;
                         break;
                     }
@@ -60,7 +60,7 @@ impl TcpCapture {
                 {
                     loop {
                         // -- Found chunked terminator!
-                        if buffer[header_end..].windows(5).any(|w| w == END_DELIMETER_BYTES) {
+                        if buffer[header_end..].windows(5).any(|w| w == END_DELIMITER_BYTES) {
                             break;
                         }
 
@@ -75,7 +75,7 @@ impl TcpCapture {
                     // Optional: Find exact end position for cleaner termination
                     if let Some(terminator_pos) = buffer[header_end..]
                         .windows(5)
-                        .position(|w| w == END_DELIMETER_BYTES)
+                        .position(|w| w == END_DELIMITER_BYTES)
                     {
                         let end_pos = header_end + terminator_pos + 5; // Include the terminator
                         buffer.truncate(end_pos);
