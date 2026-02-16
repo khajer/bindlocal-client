@@ -10,6 +10,7 @@ mod scrolling_text;
 mod tcp_capture;
 
 const CLIENT_VERSION: &str = "0.1.1";
+pub const HOST_NAME: &str = "connl.io";
 
 #[derive(Parser, Debug)]
 #[command(
