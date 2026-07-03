@@ -5,6 +5,7 @@ use terminal_size::{Width, terminal_size};
 use crate::tcp_capture::TcpCapture;
 use crate::request::HttpRequest;
 use crate::scrolling_text::ScrollingText;
+use crate::logger;
 
 const CLIENT_ERROR: &str = "CLIENT_ERROR:ERR_CONNECTION_REFUSED";
 const NOT_FOUND_CONTENT_LENGTH: &str = "CLIENT_ERROR:NOT_FOUND_CONTENT_LENGTH";
@@ -35,6 +36,7 @@ impl RequestHandler {
                 let n = stream.read(&mut buffer).await?;
                 if n == 0 {
                     println!("Server Closed Connection.");
+                    logger::log("Server Closed Connection.");
                     return Ok(());
                 }
                 total_data.extend_from_slice(&buffer[..n]);
@@ -73,6 +75,7 @@ impl RequestHandler {
                         let n = stream.read(&mut body_buf[bytes_read..]).await?;
                         if n == 0 {
                             println!("Server Closed Connection.");
+                    logger::log("Server Closed Connection.");
                             return Ok(());
                         }
                         bytes_read += n;
@@ -93,6 +96,7 @@ impl RequestHandler {
                 })?;
             } else {
                 println!("Fail to capture HTTP response");
+                logger::log("Fail to capture HTTP response");
                 let err_connection_refused = format!("{CLIENT_ERROR}{TWO_DELIMETER}");
                 status_text = CLIENT_ERROR.to_string();
 
@@ -104,6 +108,8 @@ impl RequestHandler {
             stream.flush().await.map_err(|e| {
                 io::Error::new(io::ErrorKind::Other, format!("Error flushing TCP stream: {}", e))
             })?;
+
+            logger::log(&status_text);
 
             // Display status in terminal
             if status_text.len() > screen_w {
