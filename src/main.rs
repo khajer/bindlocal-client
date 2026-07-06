@@ -3,6 +3,7 @@ use monitor::Monitor;
 use clap::Parser;
 
 mod connection;
+mod logger;
 mod monitor;
 mod request;
 mod request_handler;
@@ -43,6 +44,7 @@ async fn main() -> io::Result<()> {
     // Handle version flag
     if args.version {
         println!("connl v:{CLIENT_VERSION}");
+        logger::log(&format!("connl v:{CLIENT_VERSION}"));
         return Ok(());
     }
 
@@ -60,6 +62,7 @@ async fn main() -> io::Result<()> {
         Ok(result) => result,
         Err(e) => {
             println!("{}", e);
+            logger::log(&format!("{}", e));
             return Ok(());
         }
     };

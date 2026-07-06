@@ -1,5 +1,6 @@
 use crate::CLIENT_VERSION;
 use crate::HOST_NAME;
+use crate::logger;
 use colored::Colorize;
 use std::env;
 pub struct Monitor {}
@@ -25,5 +26,8 @@ impl Monitor {
             "https:".green()
         );
         println!("{txt}");
+        logger::log(&format!(
+            "connl.io v:{CLIENT_VERSION} online -> http(s)://{url}.{host} -> http://localhost:{local_port}"
+        ));
     }
 }

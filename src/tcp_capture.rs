@@ -88,6 +88,7 @@ impl TcpCapture {
             }
             Err(e) => {
                 eprintln!("Failed to connect to {}: {}", host, e);
+                crate::logger::log(&format!("Failed to connect to {}: {}", host, e));
                 Err(e.into())
             }
         }
